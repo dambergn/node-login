@@ -1,12 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Login</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Login</title>
 </head>
+
 <body>
-    <h1>Login Page</h1>
+  <h1>Login Page</h1>
+  <form>
+    <p>Username: </p>
+    <input id="username"><br>
+    <p>Password: </p>
+    <input type="password" id="password"><br>
+    <button type="button" onClick="logIn()">Log In</button>
+  </form>
+
+  <script src="assets/js/jquery-3.3.1.min.js"></script>
+  <script>
+    'use strict';
+    const server = window.location.href
+    console.log(server);
+    function logIn(){
+      let userName = (document.getElementById('username').value).toLowerCase();
+      let password = document.getElementById('password').value;
+      let loginInfo = {
+        username: userName,
+        password: password
+      }
+      let loginInfoStringified = JSON.stringify(loginInfo)
+      let loginInfoEncoded = btoa(loginInfoStringified);
+      // let loginInfoDecoded = atob(loginInfoEncoded)
+      // let loginInfoParsed = JSON.parse(loginInfoDecoded)
+
+      // console.log('Username:', userName, 'Password:', password);
+      // console.log(loginInfoEncoded)
+      // console.log(loginInfoParsed)
+
+      const Url = server + 'api/login';
+      // console.log(Url);
+      $.post(Url, loginInfoEncoded, function(data, status){
+        console.log(`${JSON.stringify(data)} and status is${status}`);
+      })
+    }
+    
+  </script>
 </body>
+
 </html>
