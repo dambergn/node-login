@@ -1,6 +1,6 @@
 'use strict';
 
-const serverVersion = '0.1';
+const serverVersion = '0.3';
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const app = express();
@@ -20,9 +20,25 @@ let users = [
 ]
 
 app.use(express.static('./public'));
+app.use(express.static('./admin'));
 
 app.get('/', (req, res) => {
-  res.sendFile('public/index.html', { root: './public' });
+  res.sendFile('index.html', { root: './public' });
+});
+
+app.get('/admin', verifyToken, (req, res) => {
+  jwt.verify(req.token, 'secretkey', (err, authData) => {
+    if(err){
+      console.log('User does not have access to admin')
+      res.sendStatus(403);
+    } else {
+      console.log('Directing user to admin page');
+      // res.json({
+      //   message: 'Welcome to the Admin route'
+      // })
+      res.sendFile('index.html', { root: './admin' });
+    }
+  })
 });
 
 app.get('/api', (req, res) => {
@@ -40,6 +56,7 @@ app.post('/api/posts', verifyToken, (req, res) => {
         message: 'Post created...',
         authData
       })
+      console.log('post sucessfull')
     }
   })
 })
@@ -49,16 +66,11 @@ app.post('/api/login', (req, res) => {
   let loginInfoDecoded = Base64.decode(loginInfoBase64);
   let loginInfo = JSON.parse(loginInfoDecoded)
   console.log('Login API hit: ', loginInfo);
-  // Mock user
-  const user = {
-    id: 1,
-    username: 'nadpro',
-    email: 'mhzsys.net@gmail.com'
-  }
   let authentication = checkUsers(loginInfo.username, loginInfo.password);
   console.log('Authentication :', authentication);
 
   if(authentication === 'not authenticated'){
+    // res.json({message: 'not authenticated'});
     res.status(403);
   } else {
     jwt.sign(authentication, 'secretkey', {expiresIn: tokenExperation}, (err, token) => {
@@ -119,5 +131,4 @@ function checkUsers(userName, password){
     console.log('Username or Password not found');
     return 'not authenticated';
   }
-  
 }

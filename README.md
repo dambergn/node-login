@@ -6,6 +6,7 @@
 - cors
 - body-parser
 - base64
+- bcryptjs
 
 ## Sources
 ### Back end JWT

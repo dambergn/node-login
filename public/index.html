@@ -10,42 +10,110 @@
 
 <body>
   <h1>Login Page</h1>
+  <h2>Login Status: </h2>
+  <h3 id="login-status">not logged in</h3>
   <form>
     <p>Username: </p>
     <input id="username"><br>
     <p>Password: </p>
     <input type="password" id="password"><br>
     <button type="button" onClick="logIn()">Log In</button>
+    <button type="button" onClick="logOut()">Log Out</button>
+    <button type="button" onClick="testJWT()">Test JWT</button>
+<br>
+    <button type="button" onClick="goToAdminPage()">Admin</button>
+
   </form>
 
   <script src="assets/js/jquery-3.3.1.min.js"></script>
   <script>
     'use strict';
     const server = window.location.href
-    console.log(server);
-    function logIn(){
+
+    function authenticationCheck() {
+      // Check if logged in and setup local storage if not.
+      if (localStorage.getItem('JWT') != null) {
+        document.getElementById('login-status').innerHTML = 'Logged In';
+      } else {
+        document.getElementById('login-status').innerHTML = 'NOT Logged In';
+      }
+    }
+    authenticationCheck();
+
+    function logIn() {
       let userName = (document.getElementById('username').value).toLowerCase();
       let password = document.getElementById('password').value;
       let loginInfo = {
         username: userName,
         password: password
       }
-      let loginInfoStringified = JSON.stringify(loginInfo)
-      let loginInfoEncoded = btoa(loginInfoStringified);
-      // let loginInfoDecoded = atob(loginInfoEncoded)
-      // let loginInfoParsed = JSON.parse(loginInfoDecoded)
-
-      // console.log('Username:', userName, 'Password:', password);
-      // console.log(loginInfoEncoded)
-      // console.log(loginInfoParsed)
-
-      const Url = server + 'api/login';
-      // console.log(Url);
-      $.post(Url, loginInfoEncoded, function(data, status){
-        console.log(`${JSON.stringify(data)} and status is${status}`);
-      })
+      if (userName === "" || password === "") {
+        console.log('Username or Password can not be blank')
+        document.getElementById('login-status').innerHTML = 'Username or Password can not be blank';
+        // break;
+      } else {
+        let loginInfoStringified = JSON.stringify(loginInfo)
+        let loginInfoEncoded = btoa(loginInfoStringified);
+        const Url = server + 'api/login';
+        $.post(Url, loginInfoEncoded, function (data, status) {
+          // console.log(`${JSON.stringify(data)} and status is${status}`);
+          if (status != 'issuccess') {
+            console.log('Login Successfull')
+            localStorage.setItem('JWT', JSON.stringify(data));
+          } else {
+            console.log('Login Failed')
+          }
+          console.log(localStorage.getItem('JWT'))
+          authenticationCheck();
+        });
+      }
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
     }
-    
+
+    function logOut() {
+      localStorage.clear();
+      authenticationCheck();
+    }
+
+    function testJWT() {
+      console.log('testing JWT')
+      const Url = server + 'api/posts';
+      let Authorization = 'Bearer ' + JSON.parse(localStorage.getItem('JWT')).token
+      console.log({ Authorization });
+      $.ajax({
+        type: "POST",
+        url: Url,
+        dataType: 'json',
+        // async: false,
+        headers: {
+          "Authorization": Authorization
+        },
+        success: function (data, status) {
+          console.log('posts: ', data);
+        }
+      });
+    }
+
+    function goToAdminPage() {
+      console.log('Admin Page Link')
+      const Url = server + 'admin';
+      let Authorization = 'Bearer ' + JSON.parse(localStorage.getItem('JWT')).token
+      console.log({ Authorization });
+      $.ajax({
+        type: "get",
+        url: Url,
+        dataType: 'json',
+        // async: false,
+        headers: {
+          "Authorization": Authorization
+        },
+        success: function (data, status) {
+          console.log('posts: ', data);
+        }
+      });
+    }
+
   </script>
 </body>
 
