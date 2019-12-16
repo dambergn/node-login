@@ -7,7 +7,7 @@ const app = express();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const Base64 = require('js-base64').Base64;
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const tokenExperation = '1d'
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
