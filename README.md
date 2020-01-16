@@ -31,9 +31,9 @@ Scafolding for creating secure web based applications.
   - [x] Save JWT to local storage
   - [x] Testing for user authorization
   - [x] Testing for admin authorization
-- [] User registration
-- [] Account managment
-  - [] Reset user password
+- [ ] User registration
+- [ ] Account managment
+  - [ ] Reset user password
 
 ### Back end JWT
 - https://www.youtube.com/watch?v=7nafaH9SddU
