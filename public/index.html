@@ -11,64 +11,74 @@
 <body>
   <h1>Login Page</h1>
   <h2>Login Status: </h2>
-  <h3 id="login-status">not logged in</h3>
+  <h3 id="message">not logged in</h3>
   <form>
     <p>Username: </p>
-    <input id="username"><br>
+    <input id="user-name"><br>
     <p>Password: </p>
     <input type="password" id="password"><br>
-    <button type="button" onClick="logIn()">Log In</button>
-    <button type="button" onClick="logOut()">Log Out</button>
-    <button type="button" onClick="testJWT()">Test JWT</button>
-<br>
-    <button type="button" onClick="goToAdminPage()">Admin</button>
+    <button type="button" onClick="login()">Log In</button>
+    <button type="button" onClick="logOut()">Log Out</button><br>
+    <button type="button" onClick="testUser()">Test User</button>
+    <button type="button" onClick="testAdmin()">Test Admin</button>
 
   </form>
 
   <script src="assets/js/jquery-3.3.1.min.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/js/sha256.js"></script>
+  <script src="assets/js/keygen.js"></script>
+  <script src="assets/js/aes.js"></script>
+
   <script>
     'use strict';
     const server = window.location.href
 
     function authenticationCheck() {
       // Check if logged in and setup local storage if not.
-      if (localStorage.getItem('JWT') != null) {
-        document.getElementById('login-status').innerHTML = 'Logged In';
+      if (localStorage.getItem('PWM') != null) {
+        document.getElementById('message').innerHTML = 'Logged In';
       } else {
-        document.getElementById('login-status').innerHTML = 'NOT Logged In';
+        document.getElementById('message').innerHTML = 'NOT Logged In';
       }
     }
     authenticationCheck();
 
-    function logIn() {
-      let userName = (document.getElementById('username').value).toLowerCase();
-      let password = document.getElementById('password').value;
+    function login() {
+      event.preventDefault();
+      console.log("Logging in");
+      let userName = (document.getElementById("user-name").value).toLowerCase();
+      let password = document.getElementById("password").value
+      console.log("User Name:", userName);
+      console.log("Password:", password);
       let loginInfo = {
         username: userName,
         password: password
       }
       if (userName === "" || password === "") {
-        console.log('Username or Password can not be blank')
-        document.getElementById('login-status').innerHTML = 'Username or Password can not be blank';
-        // break;
+        console.log("Username or Password can not be blank");
       } else {
-        let loginInfoStringified = JSON.stringify(loginInfo)
+        let loginInfoStringified = JSON.stringify(loginInfo);
         let loginInfoEncoded = btoa(loginInfoStringified);
-        const Url = server + 'api/login';
-        $.post(Url, loginInfoEncoded, function (data, status) {
-          // console.log(`${JSON.stringify(data)} and status is${status}`);
-          if (status != 'issuccess') {
-            console.log('Login Successfull')
-            localStorage.setItem('JWT', JSON.stringify(data));
+        const URL = server + 'api/login';
+        $.post(URL, loginInfoEncoded, function (data, status) {
+          // console.log("Passed data:", data.jwToken);
+          if (data.jwToken === "Not Authenticated") {
+            console.log("Login Failed");
           } else {
-            console.log('Login Failed')
+            console.log("Login Successfull")
+            localStorage.clear();
+            let hashedToken = hex_sha256(data.jwToken)
+            let keyedToken = generateKey(hashedToken)
+            let encryptedMasterHash = encrypt(keyedToken, hex_sha256(password))
+            // console.log("Master Hash:", hex_sha256(password))
+            updateLocalStorage({jwt: data.jwToken, user: userName, key: encryptedMasterHash});
           }
-          console.log(localStorage.getItem('JWT'))
-          authenticationCheck();
-        });
+        })
       }
-      document.getElementById('username').value = '';
-      document.getElementById('password').value = '';
+      document.getElementById("user-name").value = ""
+      document.getElementById("password").value = ""
+      document.getElementById("message").innerHTML=`Logged in as ${userName}`
     }
 
     function logOut() {
@@ -76,18 +86,21 @@
       authenticationCheck();
     }
 
-    function testJWT() {
-      console.log('testing JWT')
-      const Url = server + 'api/posts';
-      let Authorization = 'Bearer ' + JSON.parse(localStorage.getItem('JWT')).token
-      console.log({ Authorization });
+    function testUser() {
+      console.log('testing User Authorization')
+      const URL = server + 'api/user';
+      let localStore = JSON.parse(localStorage.getItem('PWM'))
+      let hashedToken = hex_sha256(localStore.jwt)
+      let keyedToken = generateKey(hashedToken)
+      let decryptedMasterHash = decrypt(keyedToken, localStore.key)
+      let masterHashKey = generateKey(decryptedMasterHash)
       $.ajax({
         type: "POST",
-        url: Url,
+        url: URL,
         dataType: 'json',
         // async: false,
         headers: {
-          "Authorization": Authorization
+          'authorization': 'Bearer ' + JSON.stringify(localStore.jwt)
         },
         success: function (data, status) {
           console.log('posts: ', data);
@@ -95,24 +108,29 @@
       });
     }
 
-    function goToAdminPage() {
-      console.log('Admin Page Link')
-      const Url = server + 'admin';
-      let Authorization = 'Bearer ' + JSON.parse(localStorage.getItem('JWT')).token
-      console.log({ Authorization });
+    function testAdmin() {
+      console.log('testing Admin Authorization')
+      const URL = server + 'api/admin';
+      let localStore = JSON.parse(localStorage.getItem('PWM'))
+      let hashedToken = hex_sha256(localStore.jwt)
+      let keyedToken = generateKey(hashedToken)
+      let decryptedMasterHash = decrypt(keyedToken, localStore.key)
+      let masterHashKey = generateKey(decryptedMasterHash)
       $.ajax({
-        type: "get",
-        url: Url,
+        type: "POST",
+        url: URL,
         dataType: 'json',
         // async: false,
         headers: {
-          "Authorization": Authorization
+          'authorization': 'Bearer ' + JSON.stringify(localStore.jwt)
         },
         success: function (data, status) {
           console.log('posts: ', data);
         }
       });
     }
+
+
 
   </script>
 </body>
